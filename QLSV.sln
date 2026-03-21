@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.2.0
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLSV", "QLSV.csproj", "{2E0C6D9C-E8A8-B95D-6781-E9BBD2124E37}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLSV", "QLSV.csproj", "{18CC834D-C632-4160-AE4D-3BFD23137DAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,10 +10,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2E0C6D9C-E8A8-B95D-6781-E9BBD2124E37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E0C6D9C-E8A8-B95D-6781-E9BBD2124E37}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E0C6D9C-E8A8-B95D-6781-E9BBD2124E37}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E0C6D9C-E8A8-B95D-6781-E9BBD2124E37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18CC834D-C632-4160-AE4D-3BFD23137DAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18CC834D-C632-4160-AE4D-3BFD23137DAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18CC834D-C632-4160-AE4D-3BFD23137DAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18CC834D-C632-4160-AE4D-3BFD23137DAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

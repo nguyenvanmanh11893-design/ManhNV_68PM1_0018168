@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="QLSV">
+  <DataContextMoniker Name="/QLSVDataContext" />
+  <nestedChildShapes>
+    <classShape Id="54ffd06a-54e9-48e7-8050-910beb7b32f5" absoluteBounds="4.25, 1.25, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/QLSVDataContext/tbl_lop" />
+      <nestedChildShapes>
+        <elementListCompartment Id="19f0db79-9547-4336-a6ef-1325263e184e" absoluteBounds="4.265, 1.71, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="512361d7-dec5-4687-8588-6fafc5a41f2a" absoluteBounds="4.125, 3.5, 2, 1.7708968098958331">
+      <DataClassMoniker Name="/QLSVDataContext/tbl_sinhvien" />
+      <nestedChildShapes>
+        <elementListCompartment Id="d8852c15-5c0d-4b93-8c86-328cd5985e80" absoluteBounds="4.14, 3.96, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="c1cf5403-a7d0-440d-b035-a2c792304429" absoluteBounds="1.25, 1.125, 2, 1.3862939453125">
+      <DataClassMoniker Name="/QLSVDataContext/tbl_taikhoan" />
+      <nestedChildShapes>
+        <elementListCompartment Id="01ffd409-abd6-4805-99ca-f51762d754ce" absoluteBounds="1.2650000000000001, 1.585, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5.1875 : 2.82859537760417); (5.1875 : 3.5)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/QLSVDataContext/tbl_lop/tbl_lop_tbl_sinhvien" />
+      <nodes>
+        <classShapeMoniker Id="54ffd06a-54e9-48e7-8050-910beb7b32f5" />
+        <classShapeMoniker Id="512361d7-dec5-4687-8588-6fafc5a41f2a" />
+      </nodes>
+    </associationConnector>
+  </nestedChildShapes>
+</ordesignerObjectsDiagram>

@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="qlsv" Class="QLSVDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=.\SQLEXPRESS;Initial Catalog=qlsv;Persist Security Info=True;User ID=sa;Multiple Active Result Sets=False;Encrypt=True;Trust Server Certificate=True;Application Name=&quot;Microsoft SQL Server Data Tools, SQL Server Object Explorer&quot;" SettingsObjectName="QLSV.Properties.Settings" SettingsPropertyName="qlsvConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.tbl_lop" Member="tbl_lops">
+    <Type Name="tbl_lop">
+      <Column Name="malop" Type="System.String" DbType="NVarChar(50) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="tenlop" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="tengvcn" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="siso" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Association Name="tbl_lop_tbl_sinhvien" Member="tbl_sinhviens" ThisKey="malop" OtherKey="malop" Type="tbl_sinhvien" />
+    </Type>
+  </Table>
+  <Table Name="dbo.tbl_sinhvien" Member="tbl_sinhviens">
+    <Type Name="tbl_sinhvien">
+      <Column Name="id" Type="System.String" DbType="NChar(10) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="hoten" Type="System.String" DbType="NVarChar(50)" CanBeNull="true" />
+      <Column Name="gioitinh" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
+      <Column Name="ngaysinh" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="malop" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
+      <Association Name="tbl_lop_tbl_sinhvien" Member="tbl_lop" ThisKey="malop" OtherKey="malop" Type="tbl_lop" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.tbl_taikhoan" Member="tbl_taikhoans">
+    <Type Name="tbl_taikhoan">
+      <Column Name="ma_tk" Type="System.String" DbType="NChar(10) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="ten_dang_nhap" Type="System.String" DbType="NChar(10) NOT NULL" CanBeNull="false" />
+      <Column Name="mat_khau" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+    </Type>
+  </Table>
+</Database>

@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace QLSV
@@ -19,15 +13,45 @@ namespace QLSV
 
         private void btn_login_Click(object sender, EventArgs e)
         {
-            if (txt_username.Text == "manhNV" && txt_password.Text == "0018168")
+            string username = txt_username.Text.Trim();
+            string password = txt_password.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                Form_QLSV f_qlsv = new Form_QLSV();
-                f_qlsv.Show();
-                this.Hide();
+                MessageBox.Show("Vui lòng nhập tài khoản và mật khẩu!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            else
+
+            try
             {
-                MessageBox.Show("Sai tài khoản hoặc mật khẩu!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    // Kiểm tra tài khoản trong bảng tbl_taikhoan
+                    var taikhoan = db.tbl_taikhoans.FirstOrDefault(tk =>
+                        tk.ten_dang_nhap.Trim() == username &&
+                        tk.mat_khau.Trim() == password
+                    );
+
+                    if (taikhoan != null)
+                    {
+                        Form_QLSV f_qlsv = new Form_QLSV();
+                        f_qlsv.Show();
+                        this.Hide();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Sai tài khoản hoặc mật khẩu!", "Thông báo",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        txt_password.Clear();
+                        txt_username.Focus();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi kết nối cơ sở dữ liệu: " + ex.Message, "Lỗi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -36,7 +60,7 @@ namespace QLSV
             base.OnFormClosing(e);
             if (e.CloseReason == CloseReason.UserClosing)
             {
-                Application.Exit(); // Đóng toàn bộ ứng dụng khi nhấn X
+                Application.Exit();
             }
         }
     }

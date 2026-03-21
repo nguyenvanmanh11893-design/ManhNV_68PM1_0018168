@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -7,189 +6,337 @@ namespace QLSV
 {
     public partial class Form_QLLH : Form
     {
-        private List<LopHoc> dsLopHoc = new List<LopHoc>();
-
         public Form_QLLH()
         {
             InitializeComponent();
-            LoadSampleData();
-            LoadListView(dsLopHoc);
+
+            // ── Bước 1: Tắt AutoGenerateColumns vì Designer đã định nghĩa cột sẵn ──
+            dataGridView.AutoGenerateColumns = false;
+
+            // ── Bước 2: Gán DataPropertyName cho từng cột khớp với tên property ──
+            colMaLH.DataPropertyName = "malop";
+            colTenLop.DataPropertyName = "tenlop";
+            colGVCN.DataPropertyName = "tengvcn";
+            colSiSo.DataPropertyName = "siso";
+
+            // ── Bước 3: Thiết lập chọn cả dòng và bắt sự kiện ──
+            dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView.ReadOnly = true;
+            dataGridView.RowHeadersVisible = false; // Ẩn cột Row Header thừa bên trái
+            dataGridView.CellClick += dataGridView_CellClick;
+
+            LoadDataGridView();
         }
 
-        private void LoadSampleData()
+        // ─── Tính sĩ số thực tế và cập nhật vào cột siso của tbl_lop ─────────
+        public static void UpdateSiSo(string malop)
         {
-            dsLopHoc.Add(new LopHoc("PM1", "Phan mem 1", "Nguyen Van cuong", "40", "PM1"));
-            dsLopHoc.Add(new LopHoc("PM2", "Phan mem 2", "Tran Thi Yen", "38", "PM2"));
-            dsLopHoc.Add(new LopHoc("PM3", "Phan mem 4", "Le Van Cao", "42", "PM3"));
-            dsLopHoc.Add(new LopHoc("PM2", "Phan mem 2", "Tran Thi En", "38", "PM2"));
-            dsLopHoc.Add(new LopHoc("PM4", "Phan mem 3", "Hoang Van Nam", "45", "PM4"));
-        }
-
-        private void LoadListView(List<LopHoc> list)
-        {
-            lvLopHoc.Items.Clear();
-            foreach (var lh in list)
+            try
             {
-                ListViewItem item = new ListViewItem(lh.MaLop);
-                item.SubItems.Add(lh.TenLop);
-                item.SubItems.Add(lh.GVCN);
-                item.SubItems.Add(lh.SiSo);
-                item.SubItems.Add(lh.PhongHoc);
-                item.Tag = lh;
-                lvLopHoc.Items.Add(item);
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    var lop = db.tbl_lops.FirstOrDefault(l => l.malop.Trim() == malop.Trim());
+                    if (lop != null)
+                    {
+                        lop.siso = db.tbl_sinhviens.Count(s => s.malop.Trim() == malop.Trim());
+                        db.SubmitChanges();
+                    }
+                }
+            }
+            catch { /* bỏ qua lỗi cập nhật sĩ số */ }
+        }
+
+        // ─── Load toàn bộ lớp học lên DataGridView (dùng DataSource) ─────────
+        private void LoadDataGridView()
+        {
+            try
+            {
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    // Dùng DataSource theo hướng dẫn mục 5.2
+                    // DataPropertyName ở trên đã khớp với tên property bên dưới
+                    var ds = db.tbl_lops
+                               .Select(l => new
+                               {
+                                   malop = l.malop,
+                                   tenlop = l.tenlop,
+                                   tengvcn = l.tengvcn,
+                                   siso = l.siso.HasValue ? l.siso.Value : 0
+                               })
+                               .ToList();
+
+                    dataGridView.DataSource = ds;
+                }
+
+                // Tùy chỉnh cột sau khi bind (hướng dẫn mục 7)
+                dataGridView.Columns["colMaLH"].HeaderText = "Mã Lớp";
+                dataGridView.Columns["colTenLop"].HeaderText = "Tên Lớp";
+                dataGridView.Columns["colGVCN"].HeaderText = "Giáo Viên CN";
+                dataGridView.Columns["colSiSo"].HeaderText = "Sĩ Số";
+                dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu lớp học: " + ex.Message, "Lỗi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
+        // ─── Xóa trắng các ô nhập liệu ───────────────────────────────────────
         private void ClearInputs()
         {
             txt_malh.Text = "";
             txt_tenlop.Text = "";
             txt_gvcn.Text = "";
             txt_siso.Text = "";
-            txt_phonghoc.Text = "";
+            txt_malh.ReadOnly = false;
+            txt_siso.ReadOnly = true;   // siso luôn chỉ đọc
             txt_malh.Focus();
         }
 
-        private void lvLopHoc_SelectedIndexChanged(object sender, EventArgs e)
+        // ─── CellClick vào dòng → điền vào ô nhập liệu (hướng dẫn mục 8) ────
+        private void dataGridView_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (lvLopHoc.SelectedItems.Count > 0)
-            {
-                LopHoc lh = (LopHoc)lvLopHoc.SelectedItems[0].Tag;
-                txt_malh.Text = lh.MaLop;
-                txt_tenlop.Text = lh.TenLop;
-                txt_gvcn.Text = lh.GVCN;
-                txt_siso.Text = lh.SiSo;
-                txt_phonghoc.Text = lh.PhongHoc;
-            }
+            // Bỏ qua khi click vào header (RowIndex = -1)
+            if (e.RowIndex < 0) return;
+
+            txt_malh.Text = dataGridView.Rows[e.RowIndex].Cells["colMaLH"].Value?.ToString();
+            txt_tenlop.Text = dataGridView.Rows[e.RowIndex].Cells["colTenLop"].Value?.ToString();
+            txt_gvcn.Text = dataGridView.Rows[e.RowIndex].Cells["colGVCN"].Value?.ToString();
+            txt_siso.Text = dataGridView.Rows[e.RowIndex].Cells["colSiSo"].Value?.ToString();
+
+            txt_malh.ReadOnly = true;   // không cho sửa mã lớp khi đã chọn
+            txt_siso.ReadOnly = true;   // siso tự tính, không cho sửa tay
         }
 
+        // ─── THÊM lớp học ─────────────────────────────────────────────────────
         private void btn_add_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txt_malh.Text) || string.IsNullOrWhiteSpace(txt_tenlop.Text))
+            string malop = txt_malh.Text.Trim();
+            string tenlop = txt_tenlop.Text.Trim();
+            string tengvcn = txt_gvcn.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(malop) || string.IsNullOrWhiteSpace(tenlop))
             {
-                MessageBox.Show("Vui long nhap day du Ma Lop va Ten Lop!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng nhập đầy đủ Mã Lớp và Tên Lớp!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(tengvcn))
+            {
+                MessageBox.Show("Vui lòng nhập Tên Giáo Viên Chủ Nhiệm!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (dsLopHoc.Any(l => l.MaLop == txt_malh.Text.Trim()))
+            try
             {
-                MessageBox.Show("Ma Lop da ton tai!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    if (db.tbl_lops.Any(l => l.malop.Trim() == malop))
+                    {
+                        MessageBox.Show("Mã Lớp đã tồn tại!", "Thông báo",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
 
-            LopHoc lh = new LopHoc(
-                txt_malh.Text.Trim(),
-                txt_tenlop.Text.Trim(),
-                txt_gvcn.Text.Trim(),
-                txt_siso.Text.Trim(),
-                txt_phonghoc.Text.Trim()
-            );
-            dsLopHoc.Add(lh);
-            LoadListView(dsLopHoc);
-            ClearInputs();
-            MessageBox.Show("Them lop hoc thanh cong!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    tbl_lop lop = new tbl_lop
+                    {
+                        malop = malop,
+                        tenlop = tenlop,
+                        tengvcn = tengvcn,
+                        siso = 0   // lớp mới chưa có sinh viên
+                    };
+
+                    db.tbl_lops.InsertOnSubmit(lop);
+                    db.SubmitChanges();
+                }
+
+                LoadDataGridView();
+                ClearInputs();
+                MessageBox.Show("Thêm lớp học thành công!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi thêm lớp học: " + ex.Message, "Lỗi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
+        // ─── SỬA lớp học ──────────────────────────────────────────────────────
         private void btn_edit_Click(object sender, EventArgs e)
         {
-            if (lvLopHoc.SelectedItems.Count == 0)
+            if (dataGridView.CurrentRow == null)
             {
-                MessageBox.Show("Vui long chon lop hoc can sua!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn lớp học cần sửa!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            LopHoc lh = (LopHoc)lvLopHoc.SelectedItems[0].Tag;
-            lh.TenLop = txt_tenlop.Text.Trim();
-            lh.GVCN = txt_gvcn.Text.Trim();
-            lh.SiSo = txt_siso.Text.Trim();
-            lh.PhongHoc = txt_phonghoc.Text.Trim();
+            string malop = txt_malh.Text.Trim();
+            string tenlop = txt_tenlop.Text.Trim();
+            string tengvcn = txt_gvcn.Text.Trim();
 
-            LoadListView(dsLopHoc);
-            ClearInputs();
-            MessageBox.Show("Cap nhat lop hoc thanh cong!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (string.IsNullOrWhiteSpace(tenlop) || string.IsNullOrWhiteSpace(tengvcn))
+            {
+                MessageBox.Show("Vui lòng nhập đầy đủ Tên Lớp và Tên GVCN!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    var lop = db.tbl_lops.FirstOrDefault(l => l.malop.Trim() == malop);
+                    if (lop == null)
+                    {
+                        MessageBox.Show("Không tìm thấy lớp học!", "Thông báo",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    lop.tenlop = tenlop;
+                    lop.tengvcn = tengvcn;
+                    // siso KHÔNG cập nhật ở đây — tự tính theo số sinh viên
+
+                    db.SubmitChanges();
+                }
+
+                LoadDataGridView();
+                ClearInputs();
+                MessageBox.Show("Cập nhật lớp học thành công!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi cập nhật lớp học: " + ex.Message, "Lỗi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
+        // ─── XÓA lớp học ──────────────────────────────────────────────────────
         private void btn_delete_Click(object sender, EventArgs e)
         {
-            if (lvLopHoc.SelectedItems.Count == 0)
+            if (dataGridView.CurrentRow == null)
             {
-                MessageBox.Show("Vui long chon lop hoc can xoa!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn lớp học cần xóa!", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            DialogResult result = MessageBox.Show("Ban co chac chan muon xoa lop hoc nay?", "Xac nhan", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (result == DialogResult.Yes)
+            string malop = txt_malh.Text.Trim();
+            DialogResult confirm = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa lớp '{malop}'?\n(Các sinh viên thuộc lớp này sẽ bị mất liên kết)",
+                "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirm == DialogResult.Yes)
             {
-                LopHoc lh = (LopHoc)lvLopHoc.SelectedItems[0].Tag;
-                dsLopHoc.Remove(lh);
-                LoadListView(dsLopHoc);
-                ClearInputs();
-                MessageBox.Show("Xoa lop hoc thanh cong!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try
+                {
+                    using (QLSVDataContext db = new QLSVDataContext())
+                    {
+                        var lop = db.tbl_lops.FirstOrDefault(l => l.malop.Trim() == malop);
+                        if (lop != null)
+                        {
+                            db.tbl_lops.DeleteOnSubmit(lop);
+                            db.SubmitChanges();
+                        }
+                    }
+
+                    LoadDataGridView();
+                    ClearInputs();
+                    MessageBox.Show("Xóa lớp học thành công!", "Thông báo",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("FOREIGN KEY") || ex.Message.Contains("REFERENCE"))
+                        MessageBox.Show(
+                            $"Không thể xóa lớp '{malop}' vì còn sinh viên đang thuộc lớp này!\n" +
+                            "Hãy chuyển hoặc xóa các sinh viên đó trước.",
+                            "Không thể xóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    else
+                        MessageBox.Show("Lỗi khi xóa lớp học: " + ex.Message, "Lỗi",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
-        private void btn_detail_Click(object sender, EventArgs e)
+        // ─── LÀM MỚI ─────────────────────────────────────────────────────────
+        private void btn_refresh_Click(object sender, EventArgs e)
         {
-            if (lvLopHoc.SelectedItems.Count == 0)
-            {
-                MessageBox.Show("Vui long chon lop hoc can xem chi tiet!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            LopHoc lh = (LopHoc)lvLopHoc.SelectedItems[0].Tag;
-            string detail = "===== CHI TIET LOP HOC =====\n" +
-                            "Ma Lop: " + lh.MaLop + "\n" +
-                            "Ten Lop: " + lh.TenLop + "\n" +
-                            "GVCN: " + lh.GVCN + "\n" +
-                            "Si So: " + lh.SiSo + "\n" +
-                            "Phong Hoc: " + lh.PhongHoc;
-            MessageBox.Show(detail, "Chi Tiet Lop Hoc", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            LoadDataGridView();   // tải lại toàn bộ dữ liệu
+            dataGridView.ClearSelection();
+            ClearInputs();
         }
 
+        // ─── TÌM KIẾM (dùng DataSource, không dùng Rows.Add trộn lẫn) ───────
         private void btn_search_Click(object sender, EventArgs e)
         {
             string keyword = txt_search.Text.Trim().ToLower();
+
+            // Nếu ô tìm kiếm trống → load lại toàn bộ
             if (string.IsNullOrWhiteSpace(keyword))
             {
-                LoadListView(dsLopHoc);
+                LoadDataGridView();
                 return;
             }
 
-            var result = dsLopHoc.Where(l =>
-                l.MaLop.ToLower().Contains(keyword) ||
-                l.TenLop.ToLower().Contains(keyword) ||
-                l.GVCN.ToLower().Contains(keyword)
-            ).ToList();
+            try
+            {
+                using (QLSVDataContext db = new QLSVDataContext())
+                {
+                    // Lọc bằng LINQ rồi gán DataSource (hướng dẫn mục 12)
+                    var ds = db.tbl_lops
+                               .Where(l =>
+                                   l.malop.ToLower().Contains(keyword) ||
+                                   l.tenlop.ToLower().Contains(keyword) ||
+                                   l.tengvcn.ToLower().Contains(keyword))
+                               .Select(l => new
+                               {
+                                   malop = l.malop,
+                                   tenlop = l.tenlop,
+                                   tengvcn = l.tengvcn,
+                                   siso = l.siso.HasValue ? l.siso.Value : 0
+                               })
+                               .ToList();
 
-            LoadListView(result);
+                    dataGridView.DataSource = ds;
 
-            if (result.Count == 0)
-                MessageBox.Show("Khong tim thay lop hoc phu hop!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (ds.Count == 0)
+                        MessageBox.Show("Không tìm thấy lớp học phù hợp!", "Thông báo",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tìm kiếm: " + ex.Message, "Lỗi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
+        // ─── Chuyển sang Form Quản Lý Sinh Viên ──────────────────────────────
         private void llb_qlsv_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Form_QLSV f_qlsv = new Form_QLSV();
             f_qlsv.Show();
-            this.Close();
+            this.Hide();
         }
-    }
 
-    public class LopHoc
-    {
-        public string MaLop { get; set; }
-        public string TenLop { get; set; }
-        public string GVCN { get; set; }
-        public string SiSo { get; set; }
-        public string PhongHoc { get; set; }
-
-        public LopHoc(string maLop, string tenLop, string gvcn, string siSo, string phongHoc)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            MaLop = maLop;
-            TenLop = tenLop;
-            GVCN = gvcn;
-            SiSo = siSo;
-            PhongHoc = phongHoc;
+            base.OnFormClosing(e);
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                Application.Exit();
+            }
+        }
+
+        private void dataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }
